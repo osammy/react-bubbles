@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {axiosWithAuth} from "../axiosWithAuth";
+import { axiosWithAuth } from "../axiosWithAuth";
 
 const initialColor = {
   color: "",
@@ -21,31 +21,49 @@ const ColorList = ({ colors, updateColors }) => {
     setEditing(false);
     setAddNew(true);
     setColorToEdit(initialColor);
-  }
+  };
 
   const saveEdit = e => {
     e.preventDefault();
     console.log(colorToEdit);
     const request = addNew ? axiosWithAuth().post : axiosWithAuth().put;
-    const url = addNew ? "http://localhost:5000/api/colors": `http://localhost:5000/api/colors/${colorToEdit.id}`;
-    request(url,colorToEdit)
-    .then(res => {
-      updateColors(res.data);
-    })
-    .catch(alert)
+    const url = addNew
+      ? "http://localhost:5000/api/colors"
+      : `http://localhost:5000/api/colors/${colorToEdit.id}`;
+    request(url, colorToEdit)
+      .then(res => {
+        if (addNew) {
+          updateColors(res.data);
+          setAddNew(false);
+        } else if (editing) {
+          const newColor = res.data;
+          const index = colors.findIndex(el => el.id === newColor.id);
+          const copyOfColors = [...colors];
+          copyOfColors[index] = newColor;
+          updateColors(copyOfColors);
+        }
+
+        setAddNew(false);
+        setEditing(false);
+        setColorToEdit(initialColor);
+      })
+      .catch(err => {
+        alert(err);
+      });
   };
 
   const deleteColor = color => {
     // make a delete request to delete this color
-    axiosWithAuth().delete(`http://localhost:5000/api/colors/${color.id}`)
-    .then(res => {
-      const id = res.data;
-      const newColors = colors.filter(el => el.id !== id);
-      updateColors(newColors);
-    })
-    .catch(err => {
-      alert(err);
-    })
+    axiosWithAuth()
+      .delete(`http://localhost:5000/api/colors/${color.id}`)
+      .then(res => {
+        const id = res.data;
+        const newColors = colors.filter(el => el.id !== id);
+        updateColors(newColors);
+      })
+      .catch(err => {
+        alert(err);
+      });
   };
 
   return (
